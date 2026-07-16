@@ -754,9 +754,13 @@
       return days;
     }
 
-    function getLeaveStats(employee) {
+    function getLeaveStats(employee, uptoYear, uptoMonth) {
       let used = 0;
-      Object.values(employee.attendance || {}).forEach(att => {
+      // uptoYear/uptoMonth가 주어지면 "그 달 말일까지" 등록된 근태만 누적 차감.
+      // 안 주면(예: CSV 등 전체 요약용) 등록된 모든 근태를 누적 — 기존 동작 유지.
+      const cutoffKey = (uptoYear && uptoMonth) ? dateKey(uptoYear, uptoMonth, new Date(uptoYear, uptoMonth, 0).getDate()) : null;
+      Object.entries(employee.attendance || {}).forEach(([dateStr, att]) => {
+        if (cutoffKey && dateStr > cutoffKey) return; // 조회 중인 달 이후에 예정된 근태는 아직 차감하지 않음
         const t = ATTENDANCE_TYPES[att.type];
         if (t) used += t.weight;
       });
@@ -969,7 +973,7 @@
 
       let prevGrade = null;
       list.forEach(employee => {
-        const stats = getLeaveStats(employee);
+        const stats = getLeaveStats(employee, year, month);
         const gradeInfo = GRADE_CONFIG[employee.grade] || { label: employee.grade, color: "bg-slate-100 text-slate-800", rowTint: "bg-white" };
         const safeName = escapeHtml(employee.name);
         const isGroupStart = employee.grade !== prevGrade;
@@ -1435,7 +1439,8 @@
       const header = ["팀원명", "그룹", "이월", "사용", "잔여", ...allDays.map(d => `${d.month}/${d.dayNum}`)];
       const rows = [header];
       visibleEmployees().forEach(emp => {
-        const s = getLeaveStats(emp);
+        const lastShown = shownMonths[shownMonths.length - 1];
+        const s = getLeaveStats(emp, lastShown.year, lastShown.month);
         const row = [emp.name, emp.grade, fmtNum(s.total), fmtNum(s.used), fmtNum(s.remaining)];
         allDays.forEach(d => {
           const att = emp.attendance[d.dateStr];
