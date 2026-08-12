@@ -1071,11 +1071,17 @@
       // 카드 헤더 — 이번달은 그라데이션으로 강조, 다음달 이후는 차분한 단색으로 시각적으로 한 단계 낮춤
       const head = document.createElement('div');
       head.className = isMain
-        ? 'px-4 py-3 border-b border-blue-200 bg-gradient-to-r from-blue-50 to-white flex items-center gap-3'
-        : 'px-4 py-2.5 border-b border-slate-200 bg-slate-100 flex items-center gap-3';
+        ? 'px-4 py-3 border-b border-blue-200 bg-gradient-to-r from-blue-50 to-white flex items-center justify-between gap-3'
+        : 'px-4 py-2.5 border-b border-slate-200 bg-slate-100 flex items-center justify-between gap-3';
       head.innerHTML = `
-        <h2 class="${isMain ? 'text-2xl bg-gradient-to-r from-blue-700 to-indigo-600 bg-clip-text text-transparent' : 'text-lg text-slate-400'} font-black tracking-tight">${year}년 ${month}월</h2>
-        ${isMain ? `<span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-blue-600 text-white shadow-sm">이번달</span>` : ``}
+        <div class="flex items-center gap-3">
+          <h2 class="${isMain ? 'text-2xl bg-gradient-to-r from-blue-700 to-indigo-600 bg-clip-text text-transparent' : 'text-lg text-slate-400'} font-black tracking-tight">${year}년 ${month}월</h2>
+          ${isMain ? `<span class="text-[10px] font-black px-2.5 py-1 rounded-full bg-blue-600 text-white shadow-sm">이번달</span>` : ``}
+        </div>
+        <button type="button" onclick="jumpToToday()" ${isMain ? 'disabled' : ''} class="month-today-btn flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold transition-colors bg-pink-500 border-pink-500 text-white hover:bg-pink-600 shadow-sm disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-white disabled:text-slate-400 disabled:border-slate-200 disabled:shadow-none">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"></circle></svg>
+          오늘
+        </button>
       `;
       card.appendChild(head);
 
