@@ -967,10 +967,13 @@
     }
 
     // 하기휴가는 연차와 별도 풀(기본 4일). 월별로 리셋되지 않고, 등록된 하기휴가 일수를 그대로 누적 차감합니다.
-    function getSummerLeaveStats(employee) {
+    // 하기휴가는 해마다 리셋되는 별도 휴가(기본 4일)이므로, 표시 중인 "해"의 기록만 집계한다.
+    // (연 구분 없이 전부 세면 내년 여름휴가를 미리 등록하는 순간 올해 잔여가 깎여 보인다)
+    function getSummerLeaveStats(employee, year) {
+      const yearPrefix = String(year ?? CONFIG.year) + "-";
       let used = 0;
-      Object.values(employee.attendance || {}).forEach(att => {
-        if (att.type === "SUMMER_VACATION") used += 1;
+      Object.entries(employee.attendance || {}).forEach(([dateStr, att]) => {
+        if (att.type === "SUMMER_VACATION" && dateStr.startsWith(yearPrefix)) used += 1;
       });
       const total = employee.summerLeaveTotal ?? 4;
       return { total, used, remaining: Math.max(0, total - used) };
@@ -1383,7 +1386,7 @@
         }
         tr.appendChild(tdStats);
 
-        const summerStats = getSummerLeaveStats(employee);
+        const summerStats = getSummerLeaveStats(employee, year);
         const tdSummer = document.createElement('td');
         tdSummer.className = `sticky-col-3 ${isMe ? 'bg-blue-50' : gradeInfo.rowTint} group-hover:bg-slate-100 z-10 px-1 py-1 text-center shadow-[1px_0_3px_rgba(0,0,0,0.05)] border-r border-slate-200 transition-colors`;
         const summerRemColor = summerStats.remaining <= 1 ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-sky-50 text-sky-800 border-sky-200';
@@ -1835,7 +1838,7 @@
       visibleEmployees().forEach(emp => {
         const lastShown = shownMonths[shownMonths.length - 1];
         const s = getLeaveStats(emp, lastShown.year, lastShown.month);
-        const ss = getSummerLeaveStats(emp);
+        const ss = getSummerLeaveStats(emp, lastShown.year);
         const row = [emp.name, emp.grade, fmtNum(s.total), fmtNum(s.used), fmtNum(s.remaining), fmtNum(ss.used), fmtNum(ss.remaining)];
         allDays.forEach(d => {
           const att = emp.attendance[d.dateStr];
