@@ -982,14 +982,17 @@
     function getAllocation(employee, year) {
       const byYear = employee.allocations || {};
       if (byYear[year]) return { ...byYear[year], unset: false };
-      // Supabase를 쓰지 않는 데모(로컬) 모드에서는 기존 단일 값으로 폴백 — 올해에 한해서만 적용
-      if (!usingSupabase && year === CONFIG.year) {
+      // 그 해 할당 행이 아직 없을 때:
+      // 올해라면 기존 profiles의 단일 값으로 폴백한다.
+      // step7.sql을 아직 실행하지 않았거나 이관이 누락돼도 화면이 깨지지 않게 하기 위한 안전장치.
+      if (year === CONFIG.year && employee.totalLeave != null) {
         return {
           totalLeave: (employee.totalLeave ?? 0) - (employee.baseUsedLeave ?? 0),
           summerLeaveTotal: employee.summerLeaveTotal ?? 4,
           unset: false
         };
       }
+      // 미래/과거의 아직 입력되지 않은 해 — 담당자가 입력해야 함
       return { totalLeave: 0, summerLeaveTotal: 4, unset: true };
     }
 
@@ -1009,7 +1012,8 @@
         // 이 달 이후(미래) 예정분은 이 달 통계에 영향 없음
       });
       const alloc = getAllocation(employee, year);
-      const carryIn = alloc.totalLeave - usedBefore;
+      // 할당이 입력되지 않은 해는 차감할 대상이 없으므로 0으로 둔다 (음수로 표시되면 오해를 부름)
+      const carryIn = alloc.unset ? 0 : alloc.totalLeave - usedBefore;
       const remaining = carryIn - usedThisMonth;
       return { total: carryIn, used: usedThisMonth, remaining: Math.max(0, remaining), unset: alloc.unset };
     }
